@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCA Navigation Assistant</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 1200px;
+            width: 100%;
+	    margin: 0 auto;
+            box-sizing: border-box;
+        }
+	.top-right-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .top-right-buttons button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #0072CE;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .top-right-buttons button:hover {
+            background-color: #005bb5;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #0072CE;
+            font-size: 24px;
+        }
+        .question, #result-container {
+            display: none;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #0072CE;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        button:focus {
+            outline: none;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+	    justify-content: center;
+	    margin: 0 auto;
+	    padding: 10px;
+        }
+	.signposting-grid {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		grid-template-rows: repeat(2, auto);
+		gap:10px;
+		margin-bottom: 20px;
+		width:100%;
+		box-sizing: border-box;
+	}
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .option {
+            padding: 20px;
+            border: 2px solid #0072CE;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s, border-color 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 10px;
+            flex: 1;
+        }
+        .option:hover {
+            background-color: #e9f5ff;
+            border-color: #005bb5;
+        }
+        .option h3 {
+            margin-top: 0;
+        }
+        .option ul {
+            text-align: left;
+            padding-left: 20px;
+        }
+        .pharmacy {
+            grid-row: span 2;
+        }
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        form label, form input, form select {
+            margin-bottom: 10px;
+            width: 48%;
+            font-size: 16px;
+        }
+        form input, form select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form button {
+            align-self: center;
+            width: auto;
+            margin-top: 20px;
+        }
+        .error {
+            border-color: red;
+        }
+        .icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+        .emergency-lists {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .emergency-list {
+            border: 2px solid red;
+            padding: 10px;
+            width: 45%;
+        }
+        .emergency-list h3 {
+            margin-top: 0;
+            color: red;
+        }
+        .map-container {
+            margin-top: 20px;
+        }
+        .same-day {
+            border-color: red;
+        }
+        .soon {
+            border-color: yellow;
+        }
+        .routine {
+            border-color: green;
+        }
+        .script-box {
+            background-color: #fff8e1;
+            border: 1px solid #fbc02d;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .script-box .icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .script-box .text-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .script-box p {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+            display: block;
+        }
+	.copyright {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    .result-box {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #0072CE;
+            border-radius: 4px;
+            background-color: #f0f8ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP RIGHT BUTTONS -->
+	<div class="top-right-buttons">
+        <button onclick="viewOutcomes()">View Outcomes</button>
+        <br>
+        <button onclick="location.href='mailto:christopher.bryant3@wales.nhs.uk'">Feedback</button>
+        <br>
+        <button onclick="startOver()">Start Over</button>
+    </div>
+
+    <!-- TITLE -->
+    <div class="container">
+        <h1>PCA Navigation Assistant</h1>
+        <div id="question-container">
+    <!-- QUESTIONS -->
+	<div class="question" id="q0">
+		<div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"Afon Elai Partnership. How can I help today?"</p>
+   	</div>		
+                <div class="options-grid">
+                    <div class="option" onclick="handleOption('telephone')">
+                        <img src="https://img.icons8.com/ios/50/000000/phone.png" alt="Telephone Icon" class="icon">
+                        <h3>Appointment request</h3>
+                    </div>
+                    <div class="option" onclick="handleHousecallTime()">
+                        <img src="https://img.icons8.com/ios/50/cottage--v1.png" class="icon">
+                        <h3>Housecall request</h3>
+                    </div>
+                    <div class="option" onclick="handleOption('adminTask')">
+                        <img src="https://img.icons8.com/ios/50/000000/admin-settings-male.png" alt="Admin Task Icon" class="icon">
+                        <h3>Admin task</h3>
+			                <ul>
+			                    <li>Prescriptions</li>
+			                    <li>Sick notes</li>
+			                    <li>Letters/reports</li>
+			                </ul>
+                    </div>
+                </div>
+     </div>
+
+    <!-- APPOINTMENTS BRANCH -->
+
+    <!-- EXCLUDE EMERGENCY -->
+            <div class="question" id="telephone">
+    <p>Does the patient have an immediate life-threatening condition?</p>
+    <div class="emergency-lists">
+        <div class="emergency-list">
+            <h3><strong>Adults:</strong></h3>
+            <ul style="text-align: left; line-height: 1.8;">
+                <li><strong>Unconscious or very confused</strong><br> Cannot be woken or very difficult to rouse</li>
+                <li><strong>Persistent, severe chest pain</strong><br> Lasts longer than 15 minutes and does not ease</li>
+                <li><strong>Difficulty breathing</strong><br> Shortness of breath, wheezing, or gasping for air</li>
+                <li><strong>Severe bleeding</strong><br> Cannot be stopped with pressure</li>
+                <li><strong>Severe allergic reaction</strong><br> Swelling of the face, lips, or tongue, or difficulty swallowing</li>
+                <li><strong>Severe burns or scalds</strong><br> Deep or large area burns</li>
+                <li><strong>Signs of a stroke</strong><br> Face drooping, arm weakness, speech difficulty</li>
+                <li><strong>Suicide attempt</strong><br> Intentional self-harm or overdose</li>
+                <li><strong>Labour or childbirth</strong><br> Active labour or significant bleeding</li>
+            </ul>
+        </div>
+        <div class="emergency-list">
+            <h3><strong>Children:</strong></h3>
+            <ul style="text-align: left; line-height: 1.8;">
+                <li><strong>Unconscious or very drowsy</strong><br> Cannot be woken or very difficult to rouse</li>
+                <li><strong>Difficulty breathing</strong><br> Shortness of breath, wheezing, or gasping for air</li>
+                <li><strong>Fits or convulsions</strong><br> Shaking or jerking movements</li>
+                <li><strong>Severe bleeding</strong><br> Cannot be stopped with pressure</li>
+                <li><strong>Severe allergic reaction</strong><br> Swelling of the face, lips, or tongue, or difficulty swallowing</li>
+                <li><strong>Severe burns or scalds</strong><br> Deep or large area burns</li>
+            </ul>
+        </div>
+    </div>
+    <button onclick="handleAnswer('telephone', 'yes')">Yes</button>
+    <button onclick="handleAnswer('telephone', 'no')">No</button>
+</div>
+
+<!-- SIGNPOSTING -->
+            <div class="question" id="q2">
+    <p>Does the patient have a condition suitable for:</p>
+    <div class="signposting-grid">
+        <div class="option pharmacy" onclick="handleOption('pharmacy')">
+            <img src="https://img.icons8.com/ios/50/000000/pharmacy-shop.png" alt="Pharmacy Icon" class="icon">
+            <h3>Pharmacy Common Ailment Scheme</h3>
+            <ul>
+                <li>Acne</li>
+                <li>Athletes Foot</li>
+                <li>Backache (acute)</li>
+                <li>Chickenpox</li>
+                <li>Cold sores</li>
+                <li>Colic</li>
+                <li>Conjunctivitis (bacterial)</li>
+                <li>Constipation</li>
+                <li>Diarrhoea</li>
+                <li>Dry Eyes</li>
+                <li>Dry Skin</li>
+                <li>Haemorrhoids</li>
+                <li>Hay Fever</li>
+                <li>Head Lice</li>
+                <li>Indigestion/Reflux</li>
+                <li>Ingrowing toenail</li>
+                <li>Intertrigo/Ringworm</li>
+                <li>Mouth Ulcers</li>
+                <li>Nappy rash</li>
+                <li>Oral thrush</li>
+                <li>Scabies</li>
+                <li>Sore throat/Tonsillitis</li>
+                <li>Teething</li>
+                <li>Threadworms</li>
+                <li>Vaginal thrush</li>
+                <li>Verruca</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('pharmacy_serv')">
+            <img src="https://img.icons8.com/ios/50/supplement-bottle--v1.png" class="icon">
+            <h3>Pharmacy Services</h3>
+            <ul>
+                <li>Emergency contraception</li>
+                <li>Emergency medicines supply</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('optometry')">
+            <img src="https://img.icons8.com/ios/50/000000/glasses.png" alt="Optometry Icon" class="icon">
+            <h3>Optometry WGOS 2 Scheme</h3>
+            <ul>
+                <li>Any patient with an eye problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('111_press_2')">
+            <img src="https://img.icons8.com/ios/50/000000/phone.png" alt="111 press 2 Icon" class="icon">
+            <h3>'111 press 2' Service</h3>
+            <ul>
+                <li>Urgent mental health support</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('111')">
+            <img src="https://img.icons8.com/ios/50/000000/phone.png" alt="111 Icon" class="icon">
+            <h3>111</h3>
+            <ul>
+                <li>Acute injuries</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('sexualHealth')">
+            <img src="https://img.icons8.com/ios/50/50/caduceus.png" alt="Sexual Health Icon" class="icon">
+            <h3>Integrated Sexual Health</h3>
+            <ul>
+                <li>STI testing</li>
+                <li>Emergency contraception</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('physio')">
+            <img src="https://img.icons8.com/ios/50/000000/physiotherapy.png" alt="Physio Icon" class="icon">
+            <h3>First Contact Physio</h3>
+            <ul>
+                <li>>16 year olds with a muscle or joint problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('pcls')">
+            <img src="https://img.icons8.com/ios/50/000000/mental-health.png" alt="Mental Health Icon" class="icon">
+            <h3>PCLS</h3>
+            <ul>
+                <li>>18 year olds with a mental health problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('dental')">
+            <img src="https://img.icons8.com/ios/50/000000/tooth.png" alt="Dental Icon" class="icon">
+            <h3>Dental</h3>
+            <ul>
+                <li>Any patient with a tooth or mouth problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('pregnancy')">
+            <img src="https://img.icons8.com/ios/50/000000/pregnant.png" alt="Pregnancy Icon" class="icon">
+            <h3>Pregnancy Services</h3>
+            <ul>
+                <li>Midwife registration</li>
+                <li>Midwife contact</li>
+                <li>Obstetric Assessment Unit</li>
+                <li>Pregnancy Advisory Service</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('podiatry')">
+            <img src="https://img.icons8.com/ios/50/right-footprint.png" alt="Podiatry Icon" class="icon">
+            <h3>Podiatry</h3>
+            <ul>
+                <li>Diabetic patient with foot problem</li>
+            </ul>
+        </div>
+    </div>
+    <button onclick="handleAnswer('q2', 'no')">No</button>
+</div>
+
+<!-- SIGNPOSTING OPTIONS -->
+
+ <!-- Pharmacy Common Ailment Scheme -->
+            <div class="question" id="pharmacy">
+                <p>Check the inclusion criteria for the <a href="CAS-Quick-Reference-Guide_HDUHB-Jan2017.pdf" target="_blank">Pharmacy Common Ailment Scheme</a>.</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for the Pharmacy Common Ailment Scheme. You can have a consultation with a pharmacist and they will provide advice and medication if needed, free of charge. Using this scheme will mean that people whose condition is only suitable for a GP can see one sooner."</p>
+                </div>
+                <button onclick="handleAnswer('pharmacy', 'yes')">Inclusion criteria met</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+            <div class="question" id="referPharmacy">
+                <p>Refer to the Pharmacy Common Ailment Scheme.</p>
+                <br>
+                <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+                <button onclick="showResult('Referred to Pharmacy Common Ailment Scheme.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- Pharmacy Services -->
+            <div class="question" id="pharmacy_serv">
+                <p>Signpost to community pharmacy</p>
+                <br>
+                <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+                <button onclick="showResult('Referred to Pharmacy Services.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- Optometry WGOS2 Scheme -->
+            <div class="question" id="optometry">
+                <p>Signpost the patient to any local optician</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for an optician. You can have an NHS consultation with an optician and they will use their specialist equipment to diagnose you. Some opticians can prescribe, and others will give you a prescription recommendation to give to the surgery. If the optician needs to refer you to the eye specialist at the hospital, they will do so. Using this scheme will mean that people whose condition is only suitable for a GP can see one sooner."</p>
+                </div>
+                <br>
+                <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+                <button onclick="showResult('Signposted to local optician.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- '111 press 2' Service -->
+            <div class="question" id="111_press_2">
+                <p>Advise the patient of the '111 press 2' service for urgent mental health support. Do they feel this is appropriate for them?</p>
+		        <div class="script-box">
+		            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"Rather than waiting for a GP, you could use the 111 press 2 service. You can urgently speak to a specialist mental health practitioner and they will assess, advise and support you. Information about your consultation is sent back to the surgery. Do you think this would be appropriate for you?"</p>
+                </div>
+
+                <button onclick="showResult('Patient advised to use the 111 press 2 service.')">Yes</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- 111 -->
+            <div class="question" id="111">
+                <p>Advise the patient to call 111, which is a free service</p>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"For an injury like this, it is most appropriate to call 111, and they will be able to give you advice or direct you to a Minor Injuries Unit"</p>
+    </div>
+
+    <button onclick="showResult('Patient advised to call 111')">Yes</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- First Contact Physio -->
+            <div class="question" id="physio">
+                <p>Check the service capacity on V360 booking system for First Contact Physio.</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for one of our Physiotherapists. They run NHS clinics in the nearby GP surgeries and can diagnose and treat musculoskeletal issues, like joint and muscle pain, without needing a referral. Any information from the consultation is sent back to the surgery."</p>
+                </div>
+                <a href="https://vision360.cymru.nhs.uk/clinical-portal/users/login" target="_blank"><button>Go to V360 Booking System</button></a>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- PCLS -->
+            <div class="question" id="pcls">
+                <p>Check the service capacity on V360 booking system for PCLS.</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for one of our mental health practitioners. You can have a telephone appointment with them and they will assess, advise, support and refer you if necessary. Information about your consultation is sent back to the surgery."</p>
+                </div>
+                <a href="https://vision360.cymru.nhs.uk/clinical-portal/users/login" target="_blank"><button>Go to V360 Booking System</button></a>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- Integrated Sexual Health -->
+            <div class="question" id="sexualHealth">
+                <p>Signpost the patient to Integrated Sexual Health. Adults should call 02921 835208 to book an appointment. Under 18s can access drop-in clinics on Tuesday or Thursday afternoons.</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for the sexual health clinic. They are a specialist NHS clinic that can test and treat you confidentially, and trace any contacts as well."</p>
+                </div>
+                <br>
+                <a href="https://cavuhb.nhs.wales/our-services/sexual-health/" target="_blank"><button>ISH Website</button></a>
+                <button onclick="showResult('Signposted to Integrated Sexual Health.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- Dental -->
+            <div class="question" id="dental">
+                <p>Signpost the patient to a dentist. If the patient is not registered with an NHS dentist, they can call the Dental Helpline on 0300 10 20 247.</p>
+		<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"This condition is suitable for a dentist; they are the experts in dental and oral health problems. Are you registered with an NHS dentist?"</p>
+                </div>
+                <br>
+                <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+                <button onclick="showResult('Signposted to local dentist.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- Pregnancy Services -->
+<div class="question" id="pregnancy">
+    <div class="options-row">
+        <div class="option" onclick="handleOption('midwife_reg')">
+            <h3>Midwife registration</h3>
+            <ul>
+                <li>New pregnancy</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('midwife_contact')">
+            <h3>Midwife contact</h3>
+            <ul>
+                <li>Pregnancy query or problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('OAU')">
+            <h3>Obstetric Assessment Unit</h3>
+            <ul>
+                <li>Pregnancy problem</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('PAS')">
+            <h3>Pregnancy Advisory Service</h3>
+            <ul>
+                <li>Termination of pregnancy</li>
+            </ul>
+        </div>
+    </div>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="midwife_reg">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"New pregnancies should be registered with maternity services. I'll send you a link to complete an online form when you are approximately 6 weeks pregnant"</p>
+    </div>
+    <br>
+    <button onclick="copyMaternityServices()">Copy link</button>
+    <button onclick="showResult('Signposted to register with maternity services.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="midwife_contact">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"I would recommend contacting your midwife for advice regarding this. Do you have the contact details or do you want me to text them to you?"</p>
+    </div>
+    <br>
+    <button onclick="copyMidwifeDetails()">Copy contact</button>
+    <button onclick="showResult('Signposted to midwife contact.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="OAU">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"I would recommend getting in touch with the Obstetric Assessment Unit at UHW regarding this. Do you have the contact details or do you want me to text them to you?"</p>
+    </div>
+    <br>
+    <button onclick="copyOAU()">Copy link</button>
+    <button onclick="showResult('Signposted to OAU.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="PAS">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"To request a termination, you can self-refer via an online form. I'll send you a link to this."</p>
+    </div>
+    <br>
+    <button onclick="copyPAS()">Copy link</button>
+    <button onclick="showResult('Signposted to PAS.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Dental -->
+<div class="question" id="dental">
+    <p>Signpost the patient to a dentist. If the patient is not registered with an NHS dentist, they can call the Dental Helpline on 0300 10 20 247.</p>
+<div class="script-box">
+<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"This condition is suitable for a dentist; they are the experts in dental and oral health problems. Are you registered with an NHS dentist?"</p>
+    </div>
+    <br>
+    <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+    <button onclick="showResult('Signposted to local dentist.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Podiatry -->
+<div class="question" id="podiatry">
+    <p>If the patient has diabetes, and has a new foot problem (break in the skin, discharge, pain, redness, swelling), they can access the Podiatry DFEET clinic.</p>
+<div class="script-box">
+<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"There is an open-access clinic for people with diabetes and foot problems. If you call, they will take details and a Podiatrist will call you back. Would you like the number?"</p>
+    </div>
+    <br>
+    <button onclick="copyDFEET()">Copy contact</button>
+    <button onclick="showResult('Signposted to Podiatry DFEET.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- URGENCY -->
+            <div class="question" id="q3">
+                <p>What is the urgency of the problem?</p>
+                <div class="options-row">
+
+                <!-- Same day -->
+                    <div class="option same-day" onclick="handleSameDayTime()">
+                        <img src="https://img.icons8.com/ios/50/000000/flag.png" alt="Same Day Icon" class="icon">
+                        <h3>Same day</h3>
+                        <ul>
+                            <li>Children <16</li>
+                            <li>Severe pain</li>
+                            <li>New or sudden onset headache</li>
+                            <li>Shortness of breath</li>
+                            <li>Moderate allergic reactions</li>
+                            <li>Acute infections</li>
+                            <li>Mental health crisis</li>
+                            <li>Contraception (emergency)</li>
+                        </ul>
+                    </div>
+
+                <!-- Soon (within 1 week) -->
+                    <div class="option soon" onclick="handleSoonTime()">
+                        <img src="https://img.icons8.com/ios/50/000000/clock.png" alt="Soon Icon" class="icon">
+                        <h3>Soon (within 1 week)</h3>
+                        <ul>
+                            <li>Mild to moderate abdominal pain</li>
+                            <li>New or worsening skin rash</li>
+                            <li>Cough >3 weeks</li>
+                            <li>Moderate back pain</li>
+                            <li>Increased frequency of headaches</li>
+                            <li>Worsening joint pain</li>
+                        </ul>
+                    </div>
+
+                <!-- Routine (2-4 weeks) -->
+                    <div class="option routine" onclick="handleOption('routine')">
+                        <img src="https://img.icons8.com/ios/50/000000/calendar.png" alt="Routine Icon" class="icon">
+                        <h3>Routine (2-4 weeks)</h3>
+                        <ul>
+                            <li>Ongoing conditions</li>
+                            <li>Chronic condition follow up (diabetes, hypertension)</li>
+                            <li>Mild to moderate anxiety or depression</li>
+                            <li>Weight management</li>
+                            <li>Fatigue</li>
+                            <li>Menopause</li>
+                            <li>Period problems</li>
+                            <li>Contraception (new)</li>
+                            <li>Medication reviews</li>
+                        </ul>
+                    </div>
+                </div>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+        <!-- SAME DAY CLINICIANS -->
+         <!-- Before 6pm -->
+            <div class="question" id="sameday">
+                <p>Which clinician is this suitable for?</p>
+                <div class="options-row">
+                <!-- Physician Associate -->
+                    <div class="option" onclick="handleOption('AHP_sameday')">
+                        <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="Physician Associate Icon" class="icon">
+                        <h3>Physician Associate</h3>
+                        <ul>
+                            <li>Patient >1 month <65 years</li>
+                            <li>Mild to moderate acute illness (coughs, D&V)</li>
+                            <li>Acute back pain</li>
+			                <li>Severe pain</li>
+			                <li>Shortness of breath</li>
+                            <li>Mental health (mild/moderate)</li>
+                        </ul>
+                    </div>
+
+                <!-- Advanced Nurse Practitioner -->
+                    <div class="option" onclick="handleOption('ANP_sameday')">
+                        <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="ANP Icon" class="icon">
+                        <h3>Advanced Nurse Practitioner</h3>
+                        <ul>
+                            <li>Patient >5 years</li>
+                            <li>Moderate acute illness (coughs, sore throat)</li>
+                            <li>Minor injuries</li>
+                            <li>Infections (UTI, ear infection)</li>
+                            <li>Asthma exacerbation</li>
+                        </ul>
+                    </div>
+                    
+
+                <!-- GP -->
+                    <div class="option" onclick="handleOption('GP_sameday')">
+                        <img src="https://img.icons8.com/ios/50/000000/doctor-male.png" alt="GP Icon" class="icon">
+                        <h3>GP</h3>
+                        <ul>
+                            <li>Any age</li>
+                            <li>Frailty</li>
+                            <li>Complex medical background</li>
+                            <li>Vague/unexplained symptoms</li>
+                            <li>Suspected cancers</li>
+                            <li>Mental health (moderate/severe)</li>   
+                            <li>Contraception (emergency)</li> 
+                        </ul>
+                    </div>
+                    
+
+                <!-- Nurse/HCA -->
+                    <div class="option" onclick="handleOption('Nurse/HCA_sameday')">
+                        <img src="https://img.icons8.com/ios/50/000000/nurse-female.png" alt="Nurse/HCA Icon" class="icon">
+                        <h3>Nurse/HCA</h3>
+                        <ul>
+                            <li>Wound problem/Dressing needed</li>
+                            <li>Tetanus</li>
+                            <li>Blood glucose monitor needed</li>
+                        </ul>
+                    </div>
+                    
+
+                <!-- Practice Pharmacist-->
+                    <div class="option" onclick="handleOption('Pharmacist_sameday')">
+                        <img src="https://img.icons8.com/ios/50/000000/pills.png" alt="Pharmacist Icon" class="icon">
+                        <h3>Practice Pharmacist</h3>
+                        <ul>
+                            <li>Urgent medication query</li>
+                            <li>Minor illness</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+        <!-- After 6pm -->
+        <div class="question" id="sameday_after_6pm">
+            <div class="result-box">
+                <p>After 6pm it is very unlikely we will be able to respond before the practice closes.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"As we close shortly, it is unlikely that the duty team will be able to respond today. If this can't wait until tomorrow I would recommend calling 111 for the Out of Hours team"</p>
+            </div>
+
+            <p>Which clinician is this suitable for?</p>
+            <div class="options-row">
+            <!-- Physician Associate -->
+                <div class="option" onclick="handleOption('AHP_sameday')">
+                    <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="Physician Associate Icon" class="icon">
+                    <h3>Physician Associate</h3>
+                    <ul>
+                        <li>Patient >1 month <65 years</li>
+                        <li>Mild to moderate acute illness (coughs, D&V)</li>
+                        <li>Acute back pain</li>
+                        <li>Severe pain</li>
+                        <li>Shortness of breath</li>
+                        <li>Mental health (mild/moderate)</li>
+                    </ul>
+                </div>
+
+            <!-- Advanced Nurse Practitioner -->
+                <div class="option" onclick="handleOption('ANP_sameday')">
+                    <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="ANP Icon" class="icon">
+                    <h3>Advanced Nurse Practitioner</h3>
+                    <ul>
+                        <li>Patient >5 years</li>
+                        <li>Moderate acute illness (coughs, sore throat)</li>
+                        <li>Minor injuries</li>
+                        <li>Infections (UTI, ear infection)</li>
+                        <li>Asthma exacerbation</li>
+                    </ul>
+                </div>
+                
+
+            <!-- GP -->
+                <div class="option" onclick="handleOption('GP_sameday')">
+                    <img src="https://img.icons8.com/ios/50/000000/doctor-male.png" alt="GP Icon" class="icon">
+                    <h3>GP</h3>
+                    <ul>
+                        <li>Any age</li>
+                        <li>Frailty</li>
+                        <li>Complex medical background</li>
+                        <li>Vague/unexplained symptoms</li>
+                        <li>Suspected cancers</li>
+                        <li>Mental health (moderate/severe)</li>   
+                        <li>Contraception (emergency)</li> 
+                    </ul>
+                </div>
+                
+
+            <!-- Nurse/HCA -->
+                <div class="option" onclick="handleOption('Nurse/HCA_sameday')">
+                    <img src="https://img.icons8.com/ios/50/000000/nurse-female.png" alt="Nurse/HCA Icon" class="icon">
+                    <h3>Nurse/HCA</h3>
+                    <ul>
+                        <li>Wound problem/Dressing needed</li>
+                        <li>Tetanus</li>
+                        <li>Blood glucose monitor needed</li>
+                    </ul>
+                </div>
+                
+
+            <!-- Practice Pharmacist-->
+                <div class="option" onclick="handleOption('Pharmacist_sameday')">
+                    <img src="https://img.icons8.com/ios/50/000000/pills.png" alt="Pharmacist Icon" class="icon">
+                    <h3>Practice Pharmacist</h3>
+                    <ul>
+                        <li>Urgent medication query</li>
+                        <li>Minor illness</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button onclick="handleBack()">Back</button>
+        </div>
+    
+        <!-- SAME DAY CLINICIANS OUTCOMES -->
+        <!-- Physician Associate -->
+        <div class="question" id="AHP_sameday">
+            <div class="result-box">
+                <p>Offer the patient an appointment with a Physician Associate at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Physician Associate is a healthcare professional who works alongside doctors in GP surgeries, helping to diagnose and manage your health conditions under the supervision of a GP."</p>
+            </div>
+            <img src="PA_sameday.png" alt="Physician Associate Same Day">
+            </p>
+            <p>
+            <a href="scope_of_practice.xlsx"><button>Check Scope of Practice</button></a> 
+            </p>
+            <button onclick="handleOption('GP_sameday')">Not accepted</button>
+            <button onclick="showResult('Offered an appointment with a Physician Associate at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Advanced Nurse Practitioner -->
+        <div class="question" id="ANP_sameday">
+            <div class="result-box">
+                <p>Offer the patient an appointment with an Advanced Nurse Practitioner at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"An Advanced Nurse Practitioner is a highly trained nurse who can diagnose and treat health conditions, prescribe medication, and manage your care, working closely with doctors in the GP surgery."</p>
+            </div>
+            <p>
+            </p>
+            <button onclick="handleOption('GP_sameday')">Not accepted</button>
+            <button onclick="showResult('Offered an appointment with an Advanced Nurse Practitioner at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- GP -->
+        <div class="question" id="GP_sameday">
+            <p>Take details to book the patient on to the Duty Triage list.</p>
+            <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+            <p>"All requests for GP appointments are triaged by the duty doctor team. Triage is a system where a doctor reviews your symptoms and decides the best course of action, ensuring you get the right care quickly. Please keep your phone with you. Can we send you an SMS message with further instructions or appointment details?" </p>
+            </div>
+            <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+            <p>"Our team is based across our Westway and Lansdowne branches. If you need to be seen, could you go to either?"</p>
+            </div>
+            <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+            <p>"A clinician will review this information and you will have a response today"</p>
+            </div>
+            <div class="result-box">
+                <p>Please be succinct, but try to give as much detail as needed for a clinician to make a decision.</p>
+                <p>If there are visual symptoms (eg. swelling, a rash or other skin problem), please ask the patient to send a photograph.</p>
+            </div>
+            <p>
+            <img src="Duty_triage.png" alt="Duty triage list">
+            </p>
+            <form id="dutyForm">
+                <label for="dutyPhone">Phone number:</label>
+                <input type="text" id="dutyPhone" required>
+                <label for="dutySymptoms">Symptoms:</label>
+                <input type="text" id="dutySymptoms" required>
+                <label for="dutyDuration">Duration:</label>
+                <input type="text" id="dutyDuration" required>
+                <label for="dutySite">Site:</label>
+                <select id="dutySite" required>
+                    <option value="">Select</option>
+                    <option value="Lansdowne">Lansdowne</option>
+                    <option value="Westway">Westway</option>
+                    <option value="Either">Either</option>
+                </select>
+                <button type="button" onclick="copyDutyDetails()">Copy to Clipboard</button>
+            </form>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Nurse/HCA -->
+        <div class="question" id="Nurse/HCA_sameday">
+            <div class="result-box">
+                <p>Offer the patient a same day appointment with a Practice Nurse at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Practice Nurse provides various health services including wound care, blood tests, and monitoring of chronic conditions like diabetes and asthma."</p>
+            </div>
+            <p>
+            <img src="Pharm_query.png" alt="Nurse Same Day">
+            </p>
+            <button onclick="handleOption('GP_sameday')">Not accepted</button>
+            <button onclick="showResult('Offered an appointment with a Practice Nurse at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Pharmacist -->
+        <div class="question" id="Pharmacist_sameday">
+            <div class="result-box">
+                <p>Book a medication query slot or appointment with a Practice Pharmacist. Make sure to gain SMS consent.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Practice Pharmacist is a healthcare professional who works in the GP surgery, helping to manage your medications, provide health advice, and support the doctors in ensuring you receive the best care."</p>
+            </div>
+            <p>
+            <img src="Pharm_query.png" alt="Pharmacist Medication Query">
+            </p>
+            <button onclick="showResult('Booked a medication query slot with a Practice Pharmacist. SMS consent obtained.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+
+        <!-- SOON CLINICIANS -->
+         <!-- Before 4pm -->
+            <div class="question" id="soon">
+                <p>Which clinician is this suitable for?</p>
+                <div class="options-row">
+                <!-- Physician Associate -->
+                    <div class="option" onclick="handleOption('AHP_soon')">
+                        <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="Physician Associate Icon" class="icon">
+                        <h3>Physician Associate</h3>
+                        <ul>
+                            <li>Patient >1 month <65 years</li>
+                            <li>Skin rash</li>
+                            <li>Coughs</li>
+                            <li>Mental health (mild/moderate)</li>
+                            <li>Mild/moderate abdominal pain</li>
+                            <li>Moderate back pain</li>
+                            <li>Worsening joint pain</li>
+                        </ul>
+                    </div>
+                    
+
+                <!-- Advanced Nurse Practitioner -->
+                    <div class="option" onclick="handleOption('ANP_soon')">
+                        <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="ANP Icon" class="icon">
+                        <h3>Advanced Nurse Practitioner</h3>
+                        <ul>
+                            <li>Patient >5 years</li>
+                            <li>Skin conditions (eczema, acne)</li>
+                            <li>Respiratory issues (asthma, persistent cough)</li>
+                            <li>Gastrointestinal issues (IBS, constipation)</li>
+                            <li>Musculoskeletal issues (joint pain, mild injuries)</li>
+                        </ul>
+                    </div>
+                    
+
+                <!-- Nurse/HCA -->
+                    <div class="option" onclick="handleOption('Nurse/HCA_soon')">
+                        <img src="https://img.icons8.com/ios/50/000000/nurse-female.png" alt="Nurse/HCA Icon" class="icon">
+                        <h3>Nurse/HCA</h3>
+                        <ul>
+                            <li>Wound care/dressings</li>
+                            <li>Bloods</li>
+                            <li>Blood pressure monitoring</li>
+                        </ul>
+                    </div>
+                    
+                    
+                <!-- Practice Pharmacist -->
+                    <div class="option" onclick="handleOption('Pharmacist_soon')">
+                        <img src="https://img.icons8.com/ios/50/000000/pills.png" alt="Pharmacist Icon" class="icon">
+                        <h3>Practice Pharmacist</h3>
+                        <ul>
+                            <li>Non-urgent medication query</li>
+                        </ul>
+                    </div>
+                    
+
+                </div>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+        <!-- After 4pm -->
+        <div class="question" id="soon_after_4pm">
+            <p>Which clinician is this suitable for?</p>
+            <div class="options-row">
+            <!-- Physician Associate -->
+                <div class="option" onclick="handleOption('AHP_soon')">
+                    <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="Physician Associate Icon" class="icon">
+                    <h3>Physician Associate</h3>
+                    <ul>
+                        <li>Patient >1 month <65 years</li>
+                        <li>Skin rash</li>
+                        <li>Coughs</li>
+                        <li>Mental health (mild/moderate)</li>
+                        <li>Mild/moderate abdominal pain</li>
+                        <li>Moderate back pain</li>
+                        <li>Worsening joint pain</li>
+                    </ul>
+                </div>
+                
+
+            <!-- Advanced Nurse Practitioner -->
+                <div class="option" onclick="handleOption('ANP_soon')">
+                    <img src="https://img.icons8.com/ios/50/000000/stethoscope.png" alt="ANP Icon" class="icon">
+                    <h3>Advanced Nurse Practitioner</h3>
+                    <ul>
+                        <li>Patient >5 years</li>
+                        <li>Skin conditions (eczema, acne)</li>
+                        <li>Respiratory issues (asthma, persistent cough)</li>
+                        <li>Gastrointestinal issues (IBS, constipation)</li>
+                        <li>Musculoskeletal issues (joint pain, mild injuries)</li>
+                    </ul>
+                </div>
+                
+
+            <!-- Nurse/HCA -->
+                <div class="option" onclick="handleOption('Nurse/HCA_soon')">
+                    <img src="https://img.icons8.com/ios/50/000000/nurse-female.png" alt="Nurse/HCA Icon" class="icon">
+                    <h3>Nurse/HCA</h3>
+                    <ul>
+                        <li>Wound care/dressings</li>
+                        <li>Bloods</li>
+                        <li>Blood pressure monitoring</li>
+                    </ul>
+                </div>
+                
+                
+            <!-- Practice Pharmacist -->
+                <div class="option" onclick="handleOption('Pharmacist_soon')">
+                    <img src="https://img.icons8.com/ios/50/000000/pills.png" alt="Pharmacist Icon" class="icon">
+                    <h3>Practice Pharmacist</h3>
+                    <ul>
+                        <li>Non-urgent medication query</li>
+                    </ul>
+                </div>
+                
+
+            </div>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- SOON CLINICIANS OUTCOMES -->
+         <!-- Physician Associate -->
+        <div class="question" id="AHP_soon">
+            <div class="result-box">
+                <p>Offer the patient an appointment (purple) with a Physician Associate at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Physician Associate is a healthcare professional who works alongside doctors in GP surgeries, helping to diagnose and manage your health conditions under the supervision of a GP."</p>
+            </div>                
+            <p>
+                <img src="PA_soon.png" alt="Physician Associate Soon">
+            </p>
+            <p>
+                <a href="scope_of_practice.xlsx"><button>Check Scope of Practice</button></a> 
+            </p>
+            <button onclick="handleOption('GP_sameday')">Not accepted</button>
+            <button onclick="showResult('Offered an appointment with a Physician Associate at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Advanced Nurse Practitioner -->
+        <div class="question" id="ANP_soon">
+            <div class="result-box">
+                <p>Offer the patient an appointment with an Advanced Nurse Practitioner at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"An Advanced Nurse Practitioner is a highly trained nurse who can diagnose and treat health conditions, prescribe medication, and manage your care, working closely with doctors in the GP surgery."</p>
+            </div>
+            <p>
+            </p>
+            <button onclick="handleOption('GP_sameday')">Not accepted</button>
+            <button onclick="showResult('Offered an appointment with an Advanced Nurse Practitioner at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Nurse/HCA -->
+        <div class="question" id="Nurse/HCA_soon">
+            <div class="result-box">
+                <p>Offer the patient an appointment with a Practice Nurse at their preferred site.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Practice Nurse provides various health services including wound care, blood tests, and monitoring of chronic conditions like diabetes and asthma."</p>
+            </div>
+            <button onclick="showResult('Offered an appointment with a Practice Nurse at their preferred site.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- Pharmacist-->
+        <div class="question" id="Pharmacist_soon">
+            <div class="result-box">
+                <p>Book a medication query slot or appointment with a Practice Pharmacist. Make sure to gain SMS consent.</p>
+            </div>
+            <div class="script-box">
+                <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <p>"A Practice Pharmacist is a healthcare professional who works in the GP surgery, helping to manage your medications, provide health advice, and support the doctors in ensuring you receive the best care."</p>
+            </div>
+            <p>
+                <img src="Pharm_query.png" alt="Pharmacist Medication Query"><img src="Pharm_medrev.png" alt="Medication review appointment">
+            </p>
+            <button onclick="showResult('Booked a medication query slot with a Practice Pharmacist. SMS consent obtained.')">Finish</button>
+            <button onclick="handleBack()">Back</button>
+        </div>
+
+        <!-- ROUTINE CLINICIANS -->
+         <!-- Before 4pm -->
+            <div class="question" id="routine">
+                <p>Which clinician is this suitable for?</p>
+                <div class="options-row">
+                <!-- GP -->
+                    <div class="option" onclick="handleRoutineTime()">
+                        <img src="https://img.icons8.com/ios/50/000000/doctor-male.png" alt="GP Icon" class="icon">
+                        <h3>GP</h3>
+                        <ul>
+                            <li>Any age</li>
+                            <li>Ongoing conditions</li>
+                            <li>Chronic condition follow up (eg diabetes, hypertension)</li>
+                            <li>Mental health (mild/moderate)</li>
+                            <li>Weight management</li>
+                            <li>Fatigue</li>
+                            <li>Menopause</li>
+                            <li>Period problems</li>
+                            <li>Contraception (new)</li>
+                            <li>Medication reviews</li>    
+                        </ul>
+                    </div>
+                    
+
+                <!-- Nurse/HCA -->
+                    <div class="option" onclick="handleOption('Nurse/HCA_routine')">
+                        <img src="https://img.icons8.com/ios/50/000000/nurse-female.png" alt="Nurse/HCA Icon" class="icon">
+                        <h3>Nurse/HCA</h3>
+                        <ul>
+                            <li>Diabetes review</li>
+                            <li>Asthma/COPD review</li>
+                            <li>Blood pressure</li>
+                            <li>Immunisations inc travel</li>
+                            <li>Cervical smears</li>
+                            <li>Contraception (continue)</li>
+                        </ul>
+                    </div>
+                    
+
+                <!-- Practice Pharmacist -->
+                    <div class="option" onclick="handleOption('Pharmacist_routine')">
+                        <img src="https://img.icons8.com/ios/50/000000/pills.png" alt="Pharmacist Icon" class="icon">
+                        <h3>Practice Pharmacist</h3>
+                        <ul>
+                            <li>Medication reviews (not MH drugs)</li>
+                            <li>Diabetes reviews (not insulin)</li>
+                            <li>Contraception (new)</li>
+                        </ul>
+                    </div>
+                    
+
+                </div>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+            <!-- ROUTINE CLINICIANS OUTCOMES -->
+             <!-- GP -->
+            <div class="question" id="GP_routine">
+                <div class="result-box">
+                    <p>Take details to book the patient on to the Routine Triage list.</p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"All requests for GP appointments are triaged by the duty doctor team. Triage is a system where a doctor reviews your symptoms and decides the best course of action, ensuring you get the right care quickly. Please keep your phone with you. Can we send you an SMS message with further instructions or appointment details?" </p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"A clinician will review this information and you will have a response today"</p>
+                </div>
+                <form id="routineForm">
+                    <label for="routinePhone">Phone number:</label>
+                    <input type="text" id="routinePhone" required>
+                    <label for="routineSymptoms">Symptoms:</label>
+                    <input type="text" id="routineSymptoms" required>
+                    <label for="routineDuration">Duration:</label>
+                    <input type="text" id="routineDuration" required>
+                    <label for="routineSite">Site:</label>
+                    <select id="routineSite" required>
+                        <option value="">Select</option>
+                        <option value="Lansdowne">Lansdowne</option>
+                        <option value="Westway">Westway</option>
+                        <option value="Either">Either</option>
+                    </select>
+                    <label for="routineClinician">Preferred clinician:</label>
+                    <input type="text" id="routineClinician">
+                    <label for="routineAvailability">Availability:</label>
+                    <input type="text" id="routineAvailability">
+                    <button type="button" onclick="copyRoutineDetails()">Copy to Clipboard</button>
+                </form>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+            <!-- GP routine after 4pm -->
+            <div class="question" id="GP_routine_after_4pm">
+                <div class="result-box">
+                    <p>As it's after 4pm, take details to book the patient on to the Routine Triage list for the next working day.</p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"All requests for GP appointments are triaged by the duty doctor team. Triage is a system where a doctor reviews your symptoms and decides the best course of action, ensuring you get the right care quickly. Please keep your phone with you. Can we send you an SMS message with further instructions or appointment details?" </p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"A clinician will review this information and you will have a response on the next working day"</p>
+                </div>
+                <form id="routineForm">
+                    <label for="routinePhone">Phone number:</label>
+                    <input type="text" id="routinePhone" required>
+                    <label for="routineSymptoms">Symptoms:</label>
+                    <input type="text" id="routineSymptoms" required>
+                    <label for="routineDuration">Duration:</label>
+                    <input type="text" id="routineDuration" required>
+                    <label for="routineSite">Site:</label>
+                    <select id="routineSite" required>
+                        <option value="">Select</option>
+                        <option value="Lansdowne">Lansdowne</option>
+                        <option value="Westway">Westway</option>
+                        <option value="Either">Either</option>
+                    </select>
+                    <label for="routineClinician">Preferred clinician:</label>
+                    <input type="text" id="routineClinician">
+                    <label for="routineAvailability">Availability:</label>
+                    <input type="text" id="routineAvailability">
+                    <button type="button" onclick="copyRoutineDetails()">Copy to Clipboard</button>
+                </form>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+            <!-- Nurse/HCA -->
+            <div class="question" id="Nurse/HCA_routine">
+                <div class="result-box">
+                    <p>Offer the patient an appointment with a Practice Nurse at their preferred site.</p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"A Practice Nurse provides various health services including wound care, blood tests, and monitoring of chronic conditions like diabetes and asthma."</p>
+                </div>		
+                <button onclick="showResult('Offered an appointment with a Practice Nurse at their preferred site.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+            <!-- Pharmacist -->
+            <div class="question" id="Pharmacist_routine">
+                <div class="result-box">
+                    <p>Book a telephone appointment with a Practice Pharmacist.</p>
+                </div>
+                <div class="script-box">
+                    <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                    <p>"A Practice Pharmacist is a healthcare professional who works in the GP surgery, helping to manage your medications, provide health advice, and support the doctors in ensuring you receive the best care."</p>
+                </div>
+                <button onclick="showResult('Booked a telephone appointment with a Practice Pharmacist. SMS consent obtained.')">Finish</button>
+                <button onclick="handleBack()">Back</button>
+            </div>
+
+<!-- HOUSECALL BRANCH -->
+
+<!-- Housecall request before 11am -->
+<div class="question" id="housecall_before_11">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"Our house call service is reserved for genuinely housebound patients who are unable to leave their home for any reason."</p>
+    </div>
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"All home visits are done at the doctors' discretion. The doctor may give telephone advice if this is appropriate."</p>
+    </div>
+    <div class="result-box">
+        <p>Take details for the duty team to triage the house call request. Book on the housecall triage list (red).</p>
+    </div>
+    <form id="housecallForm">
+        <label for="housecallPhone">Phone number:</label><br>
+        <input type="text" id="housecallPhone" name="housecallPhone" required><br><br>
+
+        <label for="housecallSymptoms">Symptoms:</label><br>
+        <input type="text" id="housecallSymptoms" name="housecallSymptoms" required><br><br>
+
+        <label for="housecallDuration">Duration:</label><br>
+        <input type="text" id="housecallDuration" name="housecallDuration" required><br><br>
+
+        <label for="housecallSite">Closest site:</label><br>
+        <select id="housecallSite" name="housecallSite" required>
+            <option value="Westway">Westway</option>
+            <option value="Lansdowne">Lansdowne</option>
+        </select><br><br>
+
+        <button type="button" onclick="copyHousecallDetails()">Copy to clipboard</button>
+    </form>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Housecall request after 11am -->
+<div class="question" id="housecall_after_11">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"Our house call service is reserved for genuinely housebound patients who are unable to leave their home for any reason."</p>
+    </div>
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <p>"House call requests must be made by 11am. As it's now after that time, we cannot guarantee you will be visited today. Can this wait until tomorrow?"</p>
+    </div>
+    <div class="result-box">
+        <p>If cannot wait until tomorrow, take details to book on duty triage list (green).</p>
+    </div>
+    <form id="housecallForm">
+        <label for="housecallPhone">Phone number:</label><br>
+        <input type="text" id="housecallPhone" name="housecallPhone"><br><br>
+
+        <label for="housecallSymptoms">Symptoms:</label><br>
+        <input type="text" id="housecallSymptoms" name="housecallSymptoms"><br><br>
+
+        <label for="housecallDuration">Duration:</label><br>
+        <input type="text" id="housecallDuration" name="housecallDuration"><br><br>
+
+        <label for="housecallSite">Closest site:</label><br>
+        <select id="housecallSite" name="housecallSite" required>
+            <option value="">Select a site</option>
+            <option value="Westway">Westway</option>
+            <option value="Lansdowne">Lansdowne</option>
+        </select><br><br>
+
+        <button type="button" onclick="copyHousecallDetails()">Copy to clipboard</button>
+    </form>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- ADMIN BRANCH -->
+<!-- ADMIN TASK OPTIONS -->
+<div class="question" id="adminTask">
+    <div class="options-grid">
+        <div class="option" onclick="handleOption('prescriptions')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/file-prescription--v1.png" alt="file-prescription--v1"/>
+            <h3>Prescriptions</h3>
+            <ul>
+                <li>Repeat Prescriptions</li>
+                <li>Acute Prescriptions</li>
+                <li>Prescription Queries</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('testResults')">
+            <img width="64" height="64" src="https://img.icons8.com/external-outline-berkahicon/64/external-Lab-Test-healthcare-outline-berkahicon.png">
+            <h3>Test Results</h3>
+        </div>
+        <div class="option" onclick="handleOption('sicknotes')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/triangular-bandage.png" alt="triangular-bandage"/>
+            <h3>Sick notes</h3>
+            <ul>
+                <li>New request</li>
+                <li>Extension</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('SAR')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/apple-notes.png" alt="apple-notes"/>
+            <h3>Medical Records</h3>
+            <ul>
+                <li>Subject Access Request</li>
+                <li>Results Printouts</li>
+            </ul>
+        </div>"
+        <div class="option" onclick="handleOption('privateWork')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/secured-letter--v1.png" alt="secured-letter--v1"/>
+            <h3>Private work</h3>
+            <ul>
+                <li>Letter requests</li>
+                <li>Reports</li>
+                <li>Medicals</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('death')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/grim-reaper.png" alt="grim-reaper"/>
+            <h3>Death Admin</h3>
+            <ul>
+                <li>New death</li>
+                <li>Death certificate request</li>
+                <li>Coroner's request</li>
+                <li>Medical examiner's request</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('urineSample')">
+            <img width="50" height="50" src="https://img.icons8.com/external-tanah-basah-basic-outline-tanah-basah/24/external-urine-healthcare-tanah-basah-basic-outline-tanah-basah.png">
+            <h3>Urine samples</h3>
+        </div>
+        <div class="option" onclick="handleOption('HBPM')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/sphygmomanometer.png" alt="sphygmomanometer"/>
+            <h3>Home Blood Pressure Monitoring (HBPM)</h3>
+            <ul>
+                <li>Request from clinician</li>
+                <li>Patient readings submitted</li>
+            </ul>
+        </div>
+        <div class="option" onclick="handleOption('sharedCare')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/handshake--v1.png" alt="handshake--v1"/>
+            <h3>Shared Care</h3>
+            <ul>
+                <li>New requests</li>
+                <li>Monitoring process</li>
+            </ul>
+        </div>
+    </div>
+    <button onclick="handleBack()">Back</button>
+</div>     
+
+<!-- Prescriptions -->
+<div class="question" id="prescriptions">
+    <div class="options-row">
+        <div class="option" onclick="handleOption('repeatPrescriptions')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/file-prescription--v2.png" alt="file-prescription--v2"/>
+            <h3>Repeat Prescriptions</h3>
+        </div>
+        <div class="option" onclick="handleOption('acutePrescriptions')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/file-prescription--v1.png" alt="file-prescription--v1"/>
+            <h3>Acute Prescriptions</h3>
+        </div>
+        <div class="option" onclick="handleOption('prescriptionQueries')">
+            <img width="48" height="48" src="https://img.icons8.com/parakeet-line/48/question-shield.png" alt="question-shield"/>
+            <h3>Prescription Queries</h3>
+        </div>
+    </div>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="repeatPrescriptions">
+    <div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"I'm sorry but we can't take requests for prescriptions over the telephone. You can request repeat prescriptions via our website, via the NHS Wales App, by returning the repeat slip to either branch of the surgery, or through your pharmacy."</p>
+                        <br>
+		    <p>"Would you like more information about any of these options?"</p>	
+        </div>
+    </div>
+    <p>If the patient has a query regarding their repeat prescription (e.g. out of issues, needs a medication review, unable to order) see 'Prescription Queries'</p>
+    <button onclick="handleOption('prescriptionQueries')">Prescription Queries</button>
+    <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+    <a href="https://www.afonelai.wales.nhs.uk/services/repeat-prescriptions/" target="_blank"><button>Practice Website</button></a>
+    <button onclick="showResult('Advised patient how to order repeat prescription.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="acutePrescriptions">
+    <div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"I'm sorry but we can't take requests for prescriptions over the telephone. To request a prescription for an item that isn't on your repeat prescription, please visit reception at either branch to fill in a form, or send us an eConsult request."</p>
+        </div>
+    </div>
+    <button onclick="showResult('Advised patient how to request acute prescription.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="prescriptionQueries">
+            <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+                <div class="text-container">
+                    <p>"I can ask our practice pharmacist to look into this for you, and we will let you know the outcome today. Is it ok if we send you a text message?"</p>
+                        <br>
+		            <p>"If you need an emergency supply of your medications, please contact the community pharmacy about this"</p>	
+                </div>
+            </div>
+        <p>For queries regarding prescriptions, either ask the prescriptions clerk, or book a medication query slot (red) with practice pharmacist.</p>
+        <a href="https://111.wales.nhs.uk/localservices/" target="_blank"><button>NHS 111 Local Services</button></a>
+        <button onclick="showResult('Prescription query directed to pharmacist.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Test Results -->
+<div class="question" id="testResults">
+	<div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"What tests did you have done, and what was the date of the test?"</p>
+		    <p>"For the result of a test requested by the hospital test, you will need to contact the hospital team for information."</p>	
+        </div>
+    </div>
+	<p>Check the patient's mailbox for the test results. Have they been received and actioned by a clinician?</p>
+	<button onclick="handleOption('ActionedtestResults')">Yes</button>
+	<button onclick="handleOption('UnactionedtestResults')">No</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="ActionedtestResults">
+	<p>Relay the action set by the clinician to the patient</p>
+	<p>If they have further questions, check if they have follow up booked, and if not, advise that you will query this with the requesting clinician</p>
+	<button onclick="showResult('Given test result.')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+<div class="question" id="UnactionedtestResults">
+    <p>Has the test been done within the last 2 weeks?</p>
+    <button onclick="handleOption('testLessThan2Weeks')">Yes, within 2 weeks</button>
+    <button onclick="handleOption('testMoreThan2Weeks')">No, longer than 2 weeks</button>
+    <button onclick="handleBack()">Back</button>
+ </div>
+
+    <!-- Outcome for test done within 2 weeks -->
+    <div class="question" id="testLessThan2Weeks">
+        <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+            <div class="text-container">
+                <p>"It can take 2 weeks for all of the results to return and a clinician to review them. We cannot give your results within this time as more results may come in and effect the action needed."</p>
+                <br>
+                <p>"Please call back when it has been 2 weeks since your test"</p>	
+            </div>
+        </div>
+        <button onclick="showResult('Advised to call back after 2 weeks for test results.')">Finish</button>
+        <button onclick="handleBack()">Back</button>
+    </div>
+
+    <!-- Outcome for test done longer than 2 weeks -->
+    <div class="question" id="testMoreThan2Weeks">
+        <div class="script-box">
+            <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+            <div class="text-container">
+                <p>"I'm sorry but the clinician who requested your test hasn't reviewed the results yet. I will bring this to their attention and we will be in touch with the outcome."</p>
+            </div>	
+        </div>
+        <p>Book an admin slot with the requesting clinician when they are next in the practice, over booking if necessary, making clear which result is to be checked.</p>
+        <br>
+        <p>If the requesting clinician is on leave, please refer to the Tests Protocol 'buddy system' to find their buddy clinician and ask them to action the result.</p>
+        <a href="test_protocol.docx"><button>Tests Protocol</button></a>
+        <button onclick="showResult('Booked admin slot to review unactioned result.')">Finish</button>
+        <button onclick="handleBack()">Back</button>
+    </div>
+
+<!-- Sick notes -->
+<div class="question" id="sicknotes">
+    <div class="options-row">
+        <div class="option" onclick="handleOption('newMED3')">
+        <h3>New Request</h3>
+        </div>
+        <div class="option" onclick="handleOption('extendMED3')">
+        <h3>Extension</h3>
+        </div>
+    </div>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="newMED3">
+    <p>Check that the patient has self-certified for 7 days, if not advise them that it is a legal requirement for their employer to accept this.</p>
+    <p>We need evidence to show a patient is not fit for work - either an A&E note, hospital letter, or recent consultation regarding the problem.</p>
+    <p>If a patient has not consulted regarding the problem, they will need an appointment. Click the button below to find an appropriate appointment for them.</p>
+        <button onclick="handleOption('q3')">Appointments</button>
+        <button onclick="handleOption('extendMED3')">Details for MED3</button>
+        <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="extendMED3">
+    <div class="script-box">
+		<img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"If I can take some details, I will ask a clinician to review this"</p>
+            <p>"Next time, if you are able to use our eConsult service, you can provide these details and a clinician can send the sick note to you via email"</p>
+        </div>
+    </div>
+    <p>Take details to book an admin slot</p>
+        <form id="sickNoteForm">
+            <label for="reason">Reason for Sick Note:</label><br>
+            <textarea id="reason" name="reason" rows="4" cols="50" placeholder="Enter reason for sick note..."></textarea><br><br>
+            
+            <label for="startDate">Start Date:</label><br>
+            <input type="date" id="startDate" name="startDate"><br><br>
+            
+            <label for="endDate">Requested End Date:</label><br>
+            <input type="date" id="endDate" name="endDate"><br><br>
+            
+            <button type="button" onclick="copyFormData()">Copy to Clipboard</button>
+        </form>
+        <button onclick="showResult('MED3 details taken')">Finish</button>
+        <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Medical Records -->
+
+<div class="question" id="SAR">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"You are able to access your medical records and and results, and can request copies, but we do need to make sure the proper procedures are followed to make sure we are looking after information."</p>
+            <p>"Please come in to either branch to complete the relevant paperwork"</p>
+            <p>"Please note that we need to inspect all information that we give out, and this can take up to 30 days. If you are able to restrict your request to what is purely necessary, this will help us process itfor you more quickly."</p>
+        </div>
+    </div>
+    <p>Patients will need to complete a Subject Access Request, even for requests for results</p>
+    <p>The completed paperwork should be given to the PCA assigned to Reports</p>
+    <button onclick="showResult('Advised to complete SAR paperwork')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Private work -->
+
+<div class="question" id="privateWork">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"Requests for letters, reports and medicals are not funded by the NHS contract, so we do make a charge to cover the costs involved. Please check that it is necessary."</p>
+            <p>"Our charges are in line with BMA recommendations. We cannot prioritise private work above our NHS commitments, so it can take up to 30 days for work to be completed, although usually less"</p>
+            <p>"If you would like to proceed, I will put you through to a staff member who can deal with your request"</p>
+        </div>
+    </div>
+    <p>See the list of private charges below</p>
+    <p>Direct the request to the PCA assigned to Reports</p>
+    <a href="private fees.docx"><button>Private Fees</button></a>
+    <button onclick="showResult('Private work request received')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Death admin -->
+
+<div class="question" id="death">
+    <div class="options-row">
+        <div class="option" onclick="handleOption('newDeath')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/grim-reaper.png" alt="grim-reaper"/>
+            <h3>New death</h3>
+        </div>
+        <div class="option" onclick="handleOption('deathCertificate')">
+            <img width="50" height="50" src="https://img.icons8.com/ios-filled/50/certificate.png" alt="certificate"/>
+            <h3>Death certificate request</h3>
+        </div>
+        <div class="option" onclick="handleOption('coronerRequest')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/death.png" alt="death"/>
+            <h3>Coroner's request</h3>
+        </div>
+        <div class="option" onclick="handleOption('MERequest')">
+            <img width="50" height="50" src="https://img.icons8.com/ios/50/test-failed.png" alt="test-failed"/>
+            <h3>Medical examiner request</h3>
+        </div>
+    </div>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="newDeath">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"I'm very sorry to hear that they have passed. Can I take some more information and let the GP know?"</p>
+        </div>
+    </div>
+        <p>We can be informed of new deaths by a relative, by the hospital Bereavement Office, or by the Out of Hours team.</p>
+        <p>It is vital to check if the death has been verified by a clinician. For deaths in hospital, a hospital clinician will do this. For deaths out of hospital, this can be done by  paramedics, some district nurses, and some care home nurses.</p>
+        <p>If the death has not been verified, inform the duty GP that this needs to be done by booking URGENT RESPONSE section of acute triage.</p>
+        <p>Make a Daybook announcement regarding the death so that all clinicians are informed.</p>
+        <p>Inform the PCA assigned to Registrations so that the deceased patient can be inactivated promptly.</p>
+        <p>If an out of hospital death, proceed to death certificate request</p>
+        <button onclick="handleOption('deathCertificate')">Death certificate request</button>
+        <button onclick="showResult('Informed re in-hospital death')">Finish</button>
+        <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="deathCertificate">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"I will ask the GP to check they are in a position to issue the death certificate. They will send information to the Medical Examiner and then to the Registry Office. You do not need to collect the certificate."</p>
+            <p>"Can I take your details as the next of kin?"</p>
+        </div>
+    </div>
+    <p>A GP will be able to propose a cause of death if they have attended the deceased.</p>
+    <p>Find the GP that last had a consultation with the patient. Send an urgent Daybook task to them requesting death paperwork.</p>
+    <p>If this GP is not available e.g. on leave, find the next GP to have a consultation and task them instead.</p>
+    <p>If the patient was newly registered and had no consultations, book on URGENT ADMIN section of triage list.</p>
+    <button onclick="showResult('Death certificate requested')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="coronerRequest">
+        <p>The coroner's office will request information if they need to investigate to determine the cause of death.</p>
+        <p>They will initially ask for an 'encounter report' for the patient. This can be found in Guidelines.</p>
+        <p>Print, scan and send the relevant information as requested. We are legally obliged to comply with all requests for information from the coroner's office.</p>
+        <p>If the coroner's office needs a GP report, they will send a letter requesting this. Send a Daybook task to the last GP to see the patient, letting them know when the report is due.</p>
+        <button onclick="showResult('Request from coroners office')">Finish</button>
+        <button onclick="handleBack()">Back</button>
+</div>
+
+<div class="question" id="MERequest">
+    <p>The Medical Examiner's service inspect every death and co-sign the death certificate.</p>
+    <p>They will request access to the patient's notes to do this. We are legally obliged to comply with all requests for information from the Medical Examiner's service.</p>
+    <p>Send the relevant information as requested.</p>
+    <button onclick="showResult('Request from medical examiner service')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Urine samples -->
+
+<div class="question" id="urineSample">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"We can only accept urine samples that have been requested. Could you please tell me who requested this and why?"</p>
+        </div>
+    </div>
+    <p>Urine samples may be requested for investigation of urinary symptoms from a PCA triage protocol or by a clinician.</p>
+    <p>Urine samples are also requested to check for protein in the urine (ACR) as part of diabetes and chronic kidney disease monitoring.</p>
+    <p>If they are unclear, check the patient's notes to determine the reason and whether a request form has been generated.</p>
+    <p>If still unclear, ask the duty GP to advise (book as URGENT ADMIN on acute triage list).</p>
+    <button onclick="showResult('Urine sample received')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Home blood pressure monitoring -->
+
+<div class="question" id="HBPM">
+    <div class="script-box">
+        <img src="https://img.icons8.com/ios/50/000000/speech-bubble.png" alt="Speech Bubble Icon" class="icon">
+        <div class="text-container">
+            <p>"Thanks for providing your blood pressure readings. Our healthcare assistant will review these and let you know the outcome."</p>
+            <p>"Is it ok if we send you a text message if they are normal?"</p>
+        </div>
+    </div>
+    <p>Home blood pressure monitoring has a role in diagnosing and monitoring Hypertension.</p>
+    <p>Patients may drop in their readings. These should be given to a healthcare assistant for them to action.</p>
+    <p>If the readings are very high, they will have contact from the duty GP. If they are above target, they will be contacted routinely by a GP. If they are normal they will be informed by the HCA.</p>
+    <button onclick="showResult('HBPM readings received')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+<!-- Shared care -->
+
+<div class="question" id="sharedCare">
+    <p>Shared care is a system where we prescribe and monitor specialist medications on behalf of the hospital team.</p>
+    <p>We receive requests from the hospital to initiate shared care.</p>
+    <p>The request needs to be signed by a GP, scanned and returned. Book an ADMIN slot and put the paperwork in the GP's tray.</p>
+    <p>We cannot prescribe medications until the agreement is in place and the patient is stabilised. If a patient has a query regarding this, book a query slot (red) with practice pharmacist.</p>
+    <p>Monitoring is managed by the healthcare assistant team. Direct monitoring queries to them.</p>
+    <button onclick="showResult('Shared care request')">Finish</button>
+    <button onclick="handleBack()">Back</button>
+</div>
+
+
+<!-- COPYRIGHT INFO -->
+	<div class="copyright">
+        &copy; Afon Elai Partnership 2024
+    </div>
+
+
+    <script>
+        let historyStack = [];
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            showQuestion('q0');
+        });
+
+        function showQuestion(id) {
+            document.querySelectorAll('.question').forEach(q => q.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            if (historyStack[historyStack.length - 1] !== id) {
+                historyStack.push(id);
+            }
+        }
+
+        function showResult(text) {
+            document.getElementById('question-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('result-text').innerText = text;
+            historyStack = [];
+        }
+
+        function handleAnswer(questionId, answer) {
+            switch (questionId) {
+                case 'telephone':
+                    if (answer === 'yes') {
+                        showResult('Advise calling 999 or going to A&E. Emphasize the urgency.');
+                    } else {
+                        showQuestion('q2');
+                    }
+                    break;
+                case 'q2':
+                    if (answer === 'no') {
+                        showQuestion('q3');
+                    }
+                    break;
+                case 'pharmacy':
+                    if (answer === 'yes') {
+                        showQuestion('referPharmacy');
+                    } else {
+                        historyStack.pop(); // Remove current step from history
+                        showQuestion(historyStack[historyStack.length - 1]); // Go back to previous step
+                    }
+                    break;
+                default:
+                    console.error('Unknown question ID:', questionId);
+                    break;
+            }
+        }
+
+        function handleOption(option) {
+            showQuestion(option);
+        }
+
+        function handleBack() {
+            if (historyStack.length > 1) {
+                historyStack.pop(); // Remove current step from history
+                showQuestion(historyStack.pop()); // Go back to previous step
+            }
+        }
+
+        function reset() {
+            document.getElementById('question-container').style.display = 'block';
+            document.getElementById('result-container').style.display = 'none';
+            historyStack = [];
+            showQuestion('q0');
+        }
+
+        function startOver() {
+    // Clear any history or state that tracks the current question
+    historyStack = [];
+    
+    // Reset the display of questions by hiding all other questions
+    document.querySelectorAll('.question').forEach(q => q.style.display = 'none');
+    
+    // Show the starting question (assumed to be 'q0')
+    showQuestion('q0');
+}
+        
+
+        function copyDutyDetails() {
+            const phone = document.getElementById('dutyPhone').value;
+            const symptoms = document.getElementById('dutySymptoms').value;
+            const duration = document.getElementById('dutyDuration').value;
+            const site = document.getElementById('dutySite').value;
+
+            console.log('Phone:', phone);
+    console.log('Symptoms:', symptoms);
+    console.log('Duration:', duration);
+    console.log('Site:', site);
+
+            if (!phone || !symptoms || !duration || !site) {
+                alert('Please fill out all required fields.');
+                return;
+            }
+
+            const details = `Site: ${site}\nPhone number: ${phone}\nSymptoms: ${symptoms}\nDuration: ${duration}`;
+            navigator.clipboard.writeText(details).then(() => {
+                alert('Details copied to clipboard');
+            });
+        }
+
+        function copyRoutineDetails() {
+            const phone = document.getElementById('routinePhone').value;
+            const symptoms = document.getElementById('routineSymptoms').value;
+            const duration = document.getElementById('routineDuration').value;
+            const site = document.getElementById('routineSite').value;
+            const clinician = document.getElementById('routineClinician').value;
+            const availability = document.getElementById('routineAvailability').value;
+
+            if (!phone || !symptoms || !duration || !site) {
+                alert('Please fill out all required fields.');
+                return;
+            }
+
+            const details = `Phone number: ${phone}\nSymptoms: ${symptoms}\nDuration: ${duration}\nSite: ${site}\nPreferred clinician: ${clinician}\nAvailability: ${availability}`;
+            navigator.clipboard.writeText(details).then(() => {
+                alert('Details copied to clipboard');
+            });
+        }
+
+        function copyMaternityServices() {
+            const text = "Please visit https://cavuhb.nhs.wales/files/maternity-services/registering-your-pregnancy-with-cardiff-and-vale-uhb-maternity/";
+    
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Link copied to clipboard: " + text);
+            }).catch(err => {
+                console.error('Failed to copy link: ', err);
+            });
+        }
+
+        function copyMidwifeDetails() {
+            const text = "Midwife number";
+    
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Contact copied: " + text);
+            }).catch(err => {
+                console.error('Failed to copy contact: ', err);
+            });
+        }
+
+        function copyOAU() {
+            const text = "Please call 02920 744658 for OAU";
+    
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Contact copied: " + text);
+            }).catch(err => {
+                console.error('Failed to copy contact: ', err);
+            });
+        }
+
+        function copyPAS() {
+            const text = "Please visit https://cavuhb.nhs.wales/our-services/obstetrics-and-gynaecology1/abortion-care/";
+    
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Link copied: " + text);
+            }).catch(err => {
+                console.error('Failed to copy link: ', err);
+            });
+        }
+
+        function copyDFEET() {
+            const text = "Please call 02920 335134 for Podiatry";
+    
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Contact copied: " + text);
+            }).catch(err => {
+                console.error('Failed to copy contact: ', err);
+            });
+        }
+
+        function copyFormData() {
+            const reason = document.getElementById('reason').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // Construct the string to copy
+            const formData = `Reason for Sick Note: ${reason}\nStart Date: ${startDate}\nRequested End Date: ${endDate}`;
+    
+            // Use the Clipboard API to copy the text
+            navigator.clipboard.writeText(formData).then(() => {
+            alert("Form data copied to clipboard:\n" + formData);
+             }).catch(err => {
+            console.error('Failed to copy text: ', err);
+             });
+        }
+
+	function showResult(text) {
+            document.getElementById('question-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('result-text').innerText = text;
+            
+            logOutcome(text);  // Log the outcome
+            
+            historyStack = [];
+        }
+
+        function logOutcome(outcome) {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                outcome: outcome,
+                timestamp: timestamp
+            };
+            
+            // Retrieve existing logs or create a new array if none exists
+            let logs = JSON.parse(localStorage.getItem('outcomeLogs')) || [];
+            
+            // Add the new log entry
+            logs.push(logEntry);
+            
+            // Save the updated logs back to Local Storage
+            localStorage.setItem('outcomeLogs', JSON.stringify(logs));
+            
+            console.log("Outcome logged locally:", logEntry);
+        }
+
+        function getLoggedOutcomes() {
+            // Retrieve logs from Local Storage
+            return JSON.parse(localStorage.getItem('outcomeLogs')) || [];
+        }
+
+        function viewOutcomes() {
+            const logs = getLoggedOutcomes();
+            alert(JSON.stringify(logs, null, 2));
+        }
+
+        function clearLoggedOutcomes() {
+            // Clear all logs
+            localStorage.removeItem('outcomeLogs');
+            console.log("All logs cleared");
+        }
+
+        function handleHousecallTime() {
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+
+    // Logic to show appropriate form based on the time
+    if (currentHour < 11) {
+        showQuestion('housecall_before_11');
+    } else {
+        showQuestion('housecall_after_11');
+    }
+
+    // Delay to ensure the form is fully rendered before attaching the event listener
+    setTimeout(() => {
+        const copyButton = document.querySelector('#housecallForm button[type="button"]');
+        if (copyButton) {
+            copyButton.addEventListener('click', copyHousecallDetails);
+        }
+    }, 200); // Increase the timeout to ensure the form is fully loaded
+}
+
+function copyHousecallDetails() {
+    const phoneField = document.getElementById('housecallPhone');
+    const symptomsField = document.getElementById('housecallSymptoms');
+    const durationField = document.getElementById('housecallDuration');
+    const siteField = document.getElementById('housecallSite');
+
+    // Check if fields exist in the DOM
+    if (!phoneField || !symptomsField || !durationField || !siteField) {
+        console.error('One or more form fields are missing from the DOM.');
+        return;
+    }
+
+    // Capture the values and trim spaces
+    const phone = phoneField.value.trim();
+    const symptoms = symptomsField.value.trim();
+    const duration = durationField.value.trim();
+    const site = siteField.value;
+
+    // Log field values to check if they are captured
+    console.log('Phone:', phone);
+    console.log('Symptoms:', symptoms);
+    console.log('Duration:', duration);
+    console.log('Closest Site:', site);
+
+    // Validate that all required fields are filled
+    if (!phone || !symptoms || !duration || !site) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+
+    // Create the string to be copied to the clipboard
+    const details = `Closest site: ${site}\nPhone number: ${phone}\nSymptoms: ${symptoms}\nDuration: ${duration}`;
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(details).then(() => {
+        alert('Details copied to clipboard');
+    }).catch(err => {
+        console.error('Failed to copy details:', err);
+    });
+}
+
+
+
+        function handleSameDayTime() {
+            const currentDate = new Date();
+            const currentHour = currentDate.getHours();
+
+            if (currentHour < 18) {
+                showQuestion('sameday');
+            } else {
+                showQuestion('sameday_after_6pm');
+            }
+        }
+
+        function handleSoonTime() {
+            const currentDate = new Date();
+            const currentHour = currentDate.getHours();
+
+            if (currentHour < 16) {
+                showQuestion('soon');
+            } else {
+                showQuestion('soon_after_4pm');
+            }
+        }
+
+        function handleRoutineTime() {
+            const currentDate = new Date();
+            const currentHour = currentDate.getHours();
+
+            if (currentHour < 16) {
+                showQuestion('GP_routine');
+            } else {
+                showQuestion('GP_routine_after_4pm');
+            }
+        }
+
+    </script>
+</body>
+</html>
